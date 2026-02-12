@@ -1,0 +1,8 @@
+{
+  "name": "Aldo & Fiona's Private Space",
+  "description": "A private, premium, and romantic web experience designed for Aldo and Fiona to celebrate their relationship and store shared memories.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
