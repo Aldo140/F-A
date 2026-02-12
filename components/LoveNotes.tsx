@@ -58,7 +58,6 @@ const LoveNotes: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="text-center md:text-left">
           <h2 className="text-3xl lg:text-5xl font-bold text-stone-800 serif italic tracking-tighter">{APP_CONTENT.letters.notes.title}</h2>
-          <p className="text-stone-400 mt-1 text-sm">{APP_CONTENT.letters.notes.subtitle}</p>
         </div>
         <div className="flex p-1 bg-white/60 backdrop-blur-xl border border-stone-100 rounded-full w-fit shadow-sm">
           {(['Aldo', 'Fiona'] as const).map(author => (
@@ -106,6 +105,11 @@ const LoveNotes: React.FC = () => {
             </motion.div>
         ))}</AnimatePresence>
       </div>
+      {notes.length === 0 && (
+        <div className="max-w-xl mx-auto text-center py-10 px-6 rounded-[2rem] border border-dashed border-stone-200 bg-white/70">
+          <p className="text-stone-500 text-sm">No notes yet. Write one or record a voice note to start.</p>
+        </div>
+      )}
     </div>
   );
 };

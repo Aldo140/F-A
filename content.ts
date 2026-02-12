@@ -73,11 +73,11 @@ export const APP_CONTENT = {
   letters: {
     title: "Letters",
     subtitle: "Shared thoughts, saved for now and forever.",
-    tabNotes: "Notes",
+    tabNotes: "Quick Notes",
     tabSealed: "Sealed",
     notes: {
-      title: "Notes",
-      subtitle: "Spoken and written thoughts, shared only here.",
+      title: "Quick Notes",
+      subtitle: "",
       placeholder: "Write or record a note...",
       recording: "Recording...",
       ready: "Note Ready",
