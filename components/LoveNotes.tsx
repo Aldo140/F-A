@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Mic, Play, Pause, Music, X, Send } from 'lucide-react';
+import { Trash2, Mic, Play, Pause, Music, X, Send, Square } from 'lucide-react';
 import { Note } from '../types';
 import { isValentinesDate } from '../constants';
 import { APP_CONTENT } from '../content';
@@ -43,6 +43,11 @@ const LoveNotes: React.FC = () => {
       mediaRecorderRef.current = mediaRecorder; audioChunksRef.current = [];
       mediaRecorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
       mediaRecorder.onstop = () => {
+        setIsRecording(false);
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
         setIsProcessing(true);
         const reader = new FileReader();
         reader.readAsDataURL(new Blob(audioChunksRef.current));
@@ -51,6 +56,12 @@ const LoveNotes: React.FC = () => {
       mediaRecorder.start(); setIsRecording(true); setRecordingTime(0);
       timerRef.current = window.setInterval(() => setRecordingTime(p => p + 1), 1000);
     } catch (e) { alert("Mic Access Denied"); }
+  };
+
+  const stopRecording = () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state === 'inactive') return;
+    recorder.stop();
   };
 
   return (
@@ -78,10 +89,16 @@ const LoveNotes: React.FC = () => {
               </motion.div>
             )}</AnimatePresence>
             {isRecording ? (
-              <motion.button animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1 }} onClick={() => mediaRecorderRef.current?.stop()} className="p-5 bg-rose-500 text-white rounded-3xl shadow-xl flex items-center gap-3">
-                <div className="flex gap-1">{[1, 2, 3].map(i => <div key={i} className="w-1 h-3 bg-white rounded-full animate-pulse" />)}</div>
-                <span className="text-sm font-bold">{Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}</span>
-              </motion.button>
+              <div className="flex items-center gap-2">
+                <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1 }} className="px-4 py-3 bg-rose-500 text-white rounded-2xl shadow-xl flex items-center gap-3">
+                  <div className="flex gap-1">{[1, 2, 3].map(i => <div key={i} className="w-1 h-3 bg-white rounded-full animate-pulse" />)}</div>
+                  <span className="text-sm font-bold">{Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}</span>
+                </motion.div>
+                <button onClick={stopRecording} className="px-4 py-3 bg-stone-900 text-white rounded-2xl shadow-xl flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                  <Square size={12} fill="currentColor" />
+                  Done
+                </button>
+              </div>
             ) : (
               <button onClick={startRecording} disabled={isProcessing} className="p-5 bg-white text-stone-600 rounded-3xl shadow-lg border border-stone-100 hover:scale-105 active:scale-95"><Mic size={24} /></button>
             )}

@@ -82,6 +82,7 @@ export const useAudio = (isAuthenticated: boolean) => {
         tryPlayCurrent();
       } else {
         audio.pause();
+        audio.currentTime = 0;
       }
     }
   }, [isAuthenticated, isMuted, tryPlayCurrent]);

@@ -40,9 +40,28 @@ const DEFAULT_MEMORIES: Photo[] = [
   { id: 'seed-29', url: withBase('media/gallery/IMG_6678.JPEG'), type: 'image', caption: 'Memory 29', date: '2026-02-11' },
 ];
 
-const MediaRenderer: React.FC<{ photo: Photo, className?: string, autoPlay?: boolean, muted?: boolean, loop?: boolean, onEnded?: () => void, controls?: boolean }> = ({ photo, className, autoPlay, muted, loop, onEnded, controls }) => {
-  if (photo.type === 'video') return <video src={photo.url} className={`${className} object-contain`} autoPlay={autoPlay} muted={muted} loop={loop} onEnded={onEnded} controls={controls} playsInline />;
-  return <img src={photo.url} className={className} alt={photo.caption} />;
+const shufflePhotos = (items: Photo[]) => {
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
+const MediaRenderer: React.FC<{
+  photo: Photo,
+  className?: string,
+  autoPlay?: boolean,
+  muted?: boolean,
+  loop?: boolean,
+  onEnded?: () => void,
+  controls?: boolean,
+  imageLoading?: 'eager' | 'lazy',
+  videoPreload?: 'none' | 'metadata' | 'auto'
+}> = ({ photo, className, autoPlay, muted, loop, onEnded, controls, imageLoading = 'lazy', videoPreload = 'metadata' }) => {
+  if (photo.type === 'video') return <video src={photo.url} className={`${className} object-contain`} autoPlay={autoPlay} muted={muted} loop={loop} onEnded={onEnded} controls={controls} playsInline preload={videoPreload} />;
+  return <img src={photo.url} className={className} alt={photo.caption} loading={imageLoading} decoding="async" />;
 };
 
 const PhotoMemories: React.FC = () => {
@@ -59,12 +78,13 @@ const PhotoMemories: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-                const data = await getAllMemories();
+        const data = await getAllMemories();
         const existingIds = new Set(data.map((memory) => memory.id));
         const missingDefaults = DEFAULT_MEMORIES.filter((memory) => !existingIds.has(memory.id));
-        for (const memory of missingDefaults) await saveMemory(memory);
+        await Promise.all(missingDefaults.map((memory) => saveMemory(memory)));
         const updatedData = await getAllMemories();
-        setPhotos(updatedData);
+        setPhotos(shufflePhotos(updatedData));
+        setActiveIndex(0);
       } catch (err) { console.error("Failed to load memories:", err); } finally { setIsLoading(false); }
     };
     loadData();
@@ -111,7 +131,7 @@ const PhotoMemories: React.FC = () => {
         reader.onloadend = () => resolve({ id: Math.random().toString(36).substring(2, 9) + Date.now(), url: reader.result as string, type: file.type.startsWith('video') ? 'video' : 'image', caption: 'New Memory', date: new Date().toISOString().split('T')[0] });
         reader.readAsDataURL(file);
       }));
-      Promise.all(uploadPromises).then(async (newPhotos) => { for (const p of newPhotos) await saveMemory(p); const updated = await getAllMemories(); setPhotos(updated); setIsLoading(false); }).catch(() => { setIsLoading(false); alert("Upload failed."); });
+      Promise.all(uploadPromises).then(async (newPhotos) => { await Promise.all(newPhotos.map((p) => saveMemory(p))); const updated = await getAllMemories(); setPhotos(updated); setIsLoading(false); }).catch(() => { setIsLoading(false); alert("Upload failed."); });
     }
   };
 
@@ -143,7 +163,7 @@ const PhotoMemories: React.FC = () => {
           <motion.div key="slideshow" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="relative h-[45vh] lg:h-[75vh] rounded-[2.5rem] lg:rounded-[4rem] overflow-hidden shadow-2xl bg-stone-100 cursor-pointer group" onClick={() => startMovieFrom(activeIndex)}>
             {photos.length > 0 && (
               <div className="absolute inset-0">
-                <MediaRenderer photo={photos[activeIndex]} className="w-full h-full object-cover" autoPlay muted loop />
+                <MediaRenderer photo={photos[activeIndex]} className="w-full h-full object-cover" autoPlay muted loop imageLoading="eager" videoPreload="metadata" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                 <div className="absolute bottom-10 left-10 right-10 lg:bottom-20 lg:left-20">
                   <motion.p initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-white text-2xl lg:text-6xl font-bold serif italic leading-tight">"{photos[activeIndex].caption}"</motion.p>
@@ -163,7 +183,7 @@ const PhotoMemories: React.FC = () => {
           <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-10">
             {photos.map((photo, index) => (
               <div key={photo.id} onClick={() => setEditingPhoto(photo)} className="aspect-[4/5] rounded-[2rem] lg:rounded-[3rem] overflow-hidden cursor-pointer shadow-md hover:shadow-2xl border border-stone-100 group relative transition-all hover:-translate-y-2">
-                <MediaRenderer photo={photo} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+                <MediaRenderer photo={photo} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" imageLoading="lazy" videoPreload="none" />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">{photo.type === 'video' ? <PlayCircle size={32} className="text-white" /> : <Edit2 size={32} className="text-white" />}</div>
                 <div className="absolute bottom-4 left-4 right-4 text-white text-[10px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity flex justify-between items-center"><span>{photo.date}</span>{photo.type === 'video' && <Film size={12} />}</div>
               </div>
@@ -178,7 +198,7 @@ const PhotoMemories: React.FC = () => {
              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setEditingPhoto(null)} className="absolute inset-0 bg-stone-950/90 backdrop-blur-2xl" />
              <motion.div initial={{ scale: 0.9, opacity: 0, y: 50 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 50 }} className="relative w-full h-full lg:h-auto lg:max-w-6xl bg-white lg:rounded-[4rem] shadow-2xl flex flex-col lg:flex-row overflow-hidden">
                 <div className="absolute top-4 right-4 lg:top-10 lg:right-10 z-[10]"><button onClick={() => setEditingPhoto(null)} className="p-3 bg-white/20 hover:bg-rose-500 hover:text-white backdrop-blur-xl rounded-full text-stone-800 transition-all border border-white/40"><X size={24} strokeWidth={3} /></button></div>
-                <div className="relative w-full lg:w-3/5 h-1/2 lg:h-[80vh] bg-stone-100 flex items-center justify-center overflow-hidden"><MediaRenderer photo={editingPhoto} className="w-full h-full object-contain" controls autoPlay muted /><div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" /><div className="absolute bottom-8 left-8 flex gap-4"><button onClick={() => { const idx = photos.findIndex(p => p.id === editingPhoto.id); startMovieFrom(idx); }} className="flex items-center gap-3 px-8 py-4 bg-white text-stone-900 rounded-full text-xs font-black uppercase tracking-[0.2em] shadow-2xl active:scale-95 transition-all"><Play size={16} fill="currentColor" /> {APP_CONTENT.memories.playFromHere}</button></div></div>
+                <div className="relative w-full lg:w-3/5 h-1/2 lg:h-[80vh] bg-stone-100 flex items-center justify-center overflow-hidden"><MediaRenderer photo={editingPhoto} className="w-full h-full object-contain" controls autoPlay muted imageLoading="eager" videoPreload="metadata" /><div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" /><div className="absolute bottom-8 left-8 flex gap-4"><button onClick={() => { const idx = photos.findIndex(p => p.id === editingPhoto.id); startMovieFrom(idx); }} className="flex items-center gap-3 px-8 py-4 bg-white text-stone-900 rounded-full text-xs font-black uppercase tracking-[0.2em] shadow-2xl active:scale-95 transition-all"><Play size={16} fill="currentColor" /> {APP_CONTENT.memories.playFromHere}</button></div></div>
                 <div className="w-full lg:w-2/5 p-8 lg:p-20 flex flex-col justify-center space-y-10">
                    <div className="space-y-1"><span className="text-[10px] font-black uppercase tracking-[0.4em] text-rose-400">{APP_CONTENT.memories.editMemory}</span><h3 className="text-3xl lg:text-5xl font-bold text-stone-800 serif italic">{APP_CONTENT.memories.refineMoment}</h3></div>
                    <div className="space-y-8">
@@ -201,7 +221,7 @@ const PhotoMemories: React.FC = () => {
               <AnimatePresence mode="wait"><motion.div key={photos[lightboxIndex]?.id + '-date'} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 0.7, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 1 }} className="absolute top-12 lg:top-20 z-[2147483648] flex justify-center items-center gap-4 pointer-events-none"><div className="h-px w-8 lg:w-12 bg-white/20" /><span className="text-white font-black tracking-[1.5em] uppercase text-[9px] lg:text-[11px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{photos[lightboxIndex]?.date}</span><div className="h-px w-8 lg:w-12 bg-white/20" /></motion.div></AnimatePresence>
               <AnimatePresence mode="popLayout">
                 <motion.div key={photos[lightboxIndex]?.id || 'empty'} initial={{ opacity: 0, scale: 1.1, filter: 'blur(20px)' }} animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }} exit={{ opacity: 0, scale: 0.9, filter: 'blur(20px)' }} transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }} className="absolute inset-0 flex flex-col items-center justify-center px-4 py-8 lg:p-24 origin-center">
-                  <div className="relative max-w-5xl w-full h-[55vh] lg:h-[65vh] flex flex-col items-center justify-center rounded-[4px] overflow-hidden bg-stone-900 shadow-[0_40px_100px_rgba(0,0,0,1)] border border-white/10 group"><MediaRenderer photo={photos[lightboxIndex]} className="w-full h-full object-contain z-0" autoPlay={isMoviePlaying} muted={false} onEnded={() => { if (isMoviePlaying) handleManualNext(); }} /><div className="absolute inset-0 flex z-30 pointer-events-auto"><div className="w-1/2 h-full cursor-pointer" onClick={handleManualPrev} /><div className="w-1/2 h-full cursor-pointer" onClick={handleManualNext} /></div></div>
+                  <div className="relative max-w-5xl w-full h-[55vh] lg:h-[65vh] flex flex-col items-center justify-center rounded-[4px] overflow-hidden bg-stone-900 shadow-[0_40px_100px_rgba(0,0,0,1)] border border-white/10 group"><MediaRenderer photo={photos[lightboxIndex]} className="w-full h-full object-contain z-0" autoPlay={isMoviePlaying} muted={false} onEnded={() => { if (isMoviePlaying) handleManualNext(); }} imageLoading="eager" videoPreload="metadata" /><div className="absolute inset-0 flex z-30 pointer-events-auto"><div className="w-1/2 h-full cursor-pointer" onClick={handleManualPrev} /><div className="w-1/2 h-full cursor-pointer" onClick={handleManualNext} /></div></div>
                   <div className="text-center px-4 lg:px-20 max-w-5xl pt-8 lg:pt-16 min-h-[120px] lg:min-h-[200px]"><motion.h3 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 1.2 }} className="text-white text-3xl lg:text-7xl font-bold serif italic tracking-tight lg:tracking-tighter leading-tight drop-shadow-[0_15px_40px_rgba(0,0,0,0.8)]">"{photos[lightboxIndex]?.caption}"</motion.h3></div>
                 </motion.div>
               </AnimatePresence>
