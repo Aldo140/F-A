@@ -8,6 +8,20 @@ import { APP_CONTENT } from '../content';
 
 const MEME_MAP: Record<string, string> = { 'anniversary': 'https://i.giphy.com/3oriO0OEd9QIDdllqo.gif', 'holiday': 'https://i.giphy.com/l0HlvU6g3Aue21KCc.gif', 'birthday': 'https://i.giphy.com/l4KibWpBGWchOtCRy.gif', 'default': 'https://i.giphy.com/26BRv0ThflsHCqfJA.gif' };
 const FALLBACK_SURPRISE = "https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=800&auto=format";
+const formatLocalDate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+const parseDateParts = (dateStr: string) => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return { year, month, day };
+};
+const getSurpriseMedia = (eventType?: string) => {
+  if (!eventType) return MEME_MAP.default;
+  return MEME_MAP[eventType] || MEME_MAP.default;
+};
 
 const SharedCalendar: React.FC = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -32,7 +46,12 @@ const SharedCalendar: React.FC = () => {
     setEditingFlow(null);
   };
 
-  const eventOnSelection = editingFlow ? EVENTS.find(e => e.month === new Date(editingFlow.date.replace(/-/g, '/')).getMonth() && e.day === new Date(editingFlow.date.replace(/-/g, '/')).getDate()) : null;
+  const eventOnSelection = editingFlow ? (() => {
+    const parts = parseDateParts(editingFlow.date);
+    if (!parts.month || !parts.day) return null;
+    const monthIndex = parts.month - 1;
+    return EVENTS.find(e => e.month === monthIndex && e.day === parts.day) || null;
+  })() : null;
 
   return (
     <div className="w-full h-full flex flex-col space-y-6 lg:space-y-10 pb-20">
@@ -53,10 +72,10 @@ const SharedCalendar: React.FC = () => {
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (<div key={d} className="text-center text-[9px] lg:text-xs font-black text-stone-300 py-3 uppercase tracking-[0.4em]">{d}</div>))}
           {days.map((date, idx) => {
             if (!date) return <div key={`empty-${idx}`} className="aspect-square opacity-10" />;
-            const dateStr = date.toISOString().split('T')[0]; const data = daysData[dateStr];
+            const dateStr = formatLocalDate(date); const data = daysData[dateStr];
             const event = EVENTS.find(e => e.month === date.getMonth() && e.day === date.getDate());
             const isMatch = data?.aldoStatus === 'free' && data?.fionaStatus === 'free';
-            const isToday = new Date().toISOString().split('T')[0] === dateStr;
+            const isToday = formatLocalDate(new Date()) === dateStr;
             return (
               <motion.button key={dateStr} whileTap={{ scale: 0.95 }} onClick={() => setEditingFlow({ date: dateStr, user: null })} className={`group relative aspect-square rounded-[1.2rem] lg:rounded-[2.5rem] border transition-all flex flex-col items-center justify-between p-2 lg:p-6 overflow-hidden ${isMatch ? 'bg-rose-50 border-rose-200' : isToday ? 'bg-stone-900 border-stone-900 text-white scale-105 z-10 shadow-xl' : 'bg-white/80 border-stone-100 hover:border-rose-100'}`}>
                 <div className="w-full flex justify-between items-start"><span className={`text-xs lg:text-2xl font-black ${isToday ? 'text-white' : event ? 'text-rose-500' : 'text-stone-300 group-hover:text-stone-900'}`}>{date.getDate()}</span>{event && <Heart size={10} className="text-rose-400 fill-rose-400 lg:w-5 lg:h-5" />}</div>
@@ -73,7 +92,7 @@ const SharedCalendar: React.FC = () => {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setEditingFlow(null)} className="fixed inset-0 bg-[#050505]/95 backdrop-blur-2xl" />
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} className="relative w-full lg:max-w-2xl bg-[#fdfcf9] rounded-t-[3.5rem] lg:rounded-[4rem] p-8 lg:p-12 space-y-6 shadow-2xl max-h-[95vh] overflow-y-auto z-[100001] mb-[var(--safe-bottom,0px)]">
               <div className="text-center space-y-4">
-                <div className="space-y-1"><p className="text-[10px] font-black uppercase tracking-[0.4em] text-stone-400">{new Date(editingFlow.date.replace(/-/g, '/')).toLocaleDateString(undefined, { weekday: 'long' })}</p><h3 className="text-4xl lg:text-6xl font-black text-stone-900 tracking-tighter serif italic leading-tight">{new Date(editingFlow.date.replace(/-/g, '/')).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}</h3></div>
+                <div className="space-y-1"><p className="text-[10px] font-black uppercase tracking-[0.4em] text-stone-400">{new Date(parseDateParts(editingFlow.date).year, (parseDateParts(editingFlow.date).month || 1) - 1, parseDateParts(editingFlow.date).day || 1).toLocaleDateString(undefined, { weekday: 'long' })}</p><h3 className="text-4xl lg:text-6xl font-black text-stone-900 tracking-tighter serif italic leading-tight">{new Date(parseDateParts(editingFlow.date).year, (parseDateParts(editingFlow.date).month || 1) - 1, parseDateParts(editingFlow.date).day || 1).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}</h3></div>
                 {eventOnSelection && (
                   <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`py-6 space-y-8 rounded-[2.5rem] border ${eventOnSelection.type === 'anniversary' ? 'bg-amber-50 border-amber-200' : 'bg-rose-50/50 border-rose-100'}`}>
                     <div className="flex flex-col items-center gap-3">
@@ -83,7 +102,7 @@ const SharedCalendar: React.FC = () => {
                     </div>
                     <div className="px-6"><AnimatePresence mode="wait">
                         {!revealedMeme ? (<motion.button onClick={() => setRevealedMeme(true)} className="w-full h-32 lg:h-48 rounded-[2rem] lg:rounded-[3rem] bg-white border-2 border-dashed flex flex-col items-center justify-center gap-3"><Gift size={32} className="text-rose-500" /><span className="text-[10px] font-black uppercase tracking-[0.4em] text-stone-400">{APP_CONTENT.calendar.openSurprise}</span></motion.button>) 
-                        : (<motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="rounded-[2.5rem] overflow-hidden shadow-2xl aspect-video lg:aspect-[2/1] bg-stone-100"><img src={MEME_MAP[eventOnSelection.type || 'default']} className="w-full h-full object-cover" alt="Surprise" onError={(e) => (e.currentTarget.src = FALLBACK_SURPRISE)} /></motion.div>)}
+                        : (<motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="rounded-[2.5rem] overflow-hidden shadow-2xl aspect-video lg:aspect-[2/1] bg-stone-100"><img src={getSurpriseMedia(eventOnSelection.type)} className="w-full h-full object-cover" alt="Surprise" onError={(e) => (e.currentTarget.src = FALLBACK_SURPRISE)} /></motion.div>)}
                     </AnimatePresence></div>
                   </motion.div>
                 )}
