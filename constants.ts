@@ -41,9 +41,8 @@ export const isSplashDay = () => {
  * Audio Sources
  */
 export const AUDIO_SOURCES = [
-  "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-  "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-  "https://ia801602.us.archive.org/11/items/TheOfficeThemeSong/The%20Office%20Theme%20Song.mp3"
+  "./audio/office-theme.ogg",
+  "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
 ];
 
 /**

@@ -21,6 +21,28 @@ export const useAudio = (isAuthenticated: boolean) => {
     audioRef.current = audio;
   }
 
+  const tryPlayCurrent = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio || !isAuthenticated || isMuted) return;
+    audio.play().catch((e) => {
+      if (e?.name === 'NotAllowedError') {
+        setAudioStatus('blocked');
+        return;
+      }
+      if (e?.name === 'NotSupportedError') {
+        if (sourceIndexRef.current < AUDIO_SOURCES.length - 1) {
+          sourceIndexRef.current++;
+          setAudioStatus('loading');
+          audio.src = AUDIO_SOURCES[sourceIndexRef.current];
+          audio.load();
+          tryPlayCurrent();
+        } else {
+          setAudioStatus('error');
+        }
+      }
+    });
+  }, [isAuthenticated, isMuted]);
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -32,9 +54,7 @@ export const useAudio = (isAuthenticated: boolean) => {
         setAudioStatus('loading');
         audio.src = AUDIO_SOURCES[sourceIndexRef.current];
         audio.load();
-        if (isAuthenticated && !isMuted) {
-          audio.play().catch(() => setAudioStatus('blocked'));
-        }
+        tryPlayCurrent();
       } else {
         setAudioStatus('error');
       }
@@ -51,7 +71,7 @@ export const useAudio = (isAuthenticated: boolean) => {
       audio.removeEventListener('canplaythrough', handleCanPlay);
       audio.removeEventListener('error', handleError);
     };
-  }, [isAuthenticated, isMuted]);
+  }, [tryPlayCurrent]);
 
   // Sync play state with authentication and mute status
   useEffect(() => {
@@ -59,17 +79,12 @@ export const useAudio = (isAuthenticated: boolean) => {
     if (audio) {
       audio.muted = isMuted;
       if (isAuthenticated && !isMuted) {
-        // Try to play as soon as we are authenticated and not muted
-        audio.play().catch(e => {
-          if (e.name === 'NotAllowedError') {
-            setAudioStatus('blocked');
-          }
-        });
+        tryPlayCurrent();
       } else {
         audio.pause();
       }
     }
-  }, [isAuthenticated, isMuted]);
+  }, [isAuthenticated, isMuted, tryPlayCurrent]);
 
   const playManual = useCallback(() => {
     const audio = audioRef.current;
@@ -82,11 +97,19 @@ export const useAudio = (isAuthenticated: boolean) => {
           setAudioStatus('ready');
         }).catch(e => {
           console.warn("Manual play failed:", e.name);
-          setAudioStatus('blocked');
+          if (e?.name === 'NotSupportedError' && sourceIndexRef.current < AUDIO_SOURCES.length - 1) {
+            sourceIndexRef.current++;
+            setAudioStatus('loading');
+            audio.src = AUDIO_SOURCES[sourceIndexRef.current];
+            audio.load();
+            tryPlayCurrent();
+            return;
+          }
+          setAudioStatus(e?.name === 'NotAllowedError' ? 'blocked' : 'error');
         });
       }
     }
-  }, [isMuted]);
+  }, [isMuted, tryPlayCurrent]);
 
   const toggleMute = useCallback(() => {
     const nextMute = !isMuted;
@@ -97,12 +120,12 @@ export const useAudio = (isAuthenticated: boolean) => {
     if (audio) {
       audio.muted = nextMute;
       if (!nextMute && isAuthenticated) {
-        audio.play().catch(() => setAudioStatus('blocked'));
+        tryPlayCurrent();
       } else {
         audio.pause();
       }
     }
-  }, [isMuted, isAuthenticated]);
+  }, [isMuted, isAuthenticated, tryPlayCurrent]);
 
   const retryAudio = useCallback(() => {
     const audio = audioRef.current;
@@ -111,11 +134,9 @@ export const useAudio = (isAuthenticated: boolean) => {
       sourceIndexRef.current = 0;
       audio.src = AUDIO_SOURCES[0];
       audio.load();
-      if (isAuthenticated && !isMuted) {
-        audio.play().catch(() => setAudioStatus('blocked'));
-      }
+      tryPlayCurrent();
     }
-  }, [isAuthenticated, isMuted]);
+  }, [tryPlayCurrent]);
 
   return { audioStatus, isMuted, toggleMute, retryAudio, playManual };
 };

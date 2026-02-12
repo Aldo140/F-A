@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Plus, Trash2, CheckCircle2, PlayCircle, Loader2, Film, Tv as TvIcon } from 'lucide-react';
-import { GoogleGenAI, Type } from "@google/genai";
 import { MediaItem } from '../types';
 import { APP_CONTENT } from '../content';
 
@@ -22,13 +21,38 @@ const MediaTracker: React.FC = () => {
     if (query.trim().length < 2) { setSuggestions([]); return; }
     setIsSearching(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Matches for: "${query}". Return array of matches. JSON: [{title, year, type: "movie"|"show"}]`,
-        config: { responseMimeType: "application/json", responseSchema: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, year: { type: Type.STRING }, type: { type: Type.STRING } }, required: ["title", "year", "type"] } } }
+      const q = encodeURIComponent(query.trim());
+      const [showsRes, moviesRes] = await Promise.all([
+        fetch(`https://api.tvmaze.com/search/shows?q=${q}`),
+        fetch(`https://itunes.apple.com/search?term=${q}&entity=movie&limit=10`)
+      ]);
+
+      const showData = showsRes.ok ? await showsRes.json() : [];
+      const movieData = moviesRes.ok ? await moviesRes.json() : { results: [] };
+
+      const showSuggestions = (Array.isArray(showData) ? showData : [])
+        .slice(0, 10)
+        .map((entry: any) => ({
+          title: entry?.show?.name || 'Untitled',
+          year: entry?.show?.premiered ? String(entry.show.premiered).slice(0, 4) : 'N/A',
+          type: 'show'
+        }));
+
+      const movieSuggestions = (Array.isArray(movieData?.results) ? movieData.results : [])
+        .slice(0, 10)
+        .map((entry: any) => ({
+          title: entry?.trackName || 'Untitled',
+          year: entry?.releaseDate ? String(entry.releaseDate).slice(0, 4) : 'N/A',
+          type: 'movie'
+        }));
+
+      const merged = [...showSuggestions, ...movieSuggestions];
+      const deduped = merged.filter((item, index, arr) => {
+        const key = `${item.type}:${item.title.toLowerCase()}:${item.year}`;
+        return arr.findIndex((x) => `${x.type}:${x.title.toLowerCase()}:${x.year}` === key) === index;
       });
-      setSuggestions(JSON.parse(response.text));
+
+      setSuggestions(deduped.slice(0, 12));
     } catch (e) { console.error(e); } finally { setIsSearching(false); }
   };
 

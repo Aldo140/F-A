@@ -6,6 +6,40 @@ import { Photo } from '../types';
 import { getAllMemories, saveMemory, deleteMemory } from '../db';
 import { APP_CONTENT } from '../content';
 
+const withBase = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`;
+
+const DEFAULT_MEMORIES: Photo[] = [
+  { id: 'seed-01', url: withBase('media/gallery/IMG_9777.PNG'), type: 'image', caption: 'Memory 01', date: '2026-02-11' },
+  { id: 'seed-02', url: withBase('media/gallery/IMG_8355.JPEG'), type: 'image', caption: 'Memory 02', date: '2026-02-11' },
+  { id: 'seed-03', url: withBase('media/gallery/IMG_8351.JPEG'), type: 'image', caption: 'Memory 03', date: '2026-02-11' },
+  { id: 'seed-04', url: withBase('media/gallery/IMG_8343.JPEG'), type: 'image', caption: 'Memory 04', date: '2026-02-11' },
+  { id: 'seed-05', url: withBase('media/gallery/IMG_8260.JPEG'), type: 'image', caption: 'Memory 05', date: '2026-02-11' },
+  { id: 'seed-06', url: withBase('media/gallery/IMG_8111.JPEG'), type: 'image', caption: 'Memory 06', date: '2026-02-11' },
+  { id: 'seed-07', url: withBase('media/gallery/IMG_7850.JPEG'), type: 'image', caption: 'Memory 07', date: '2026-02-11' },
+  { id: 'seed-08', url: withBase('media/gallery/IMG_7845.JPEG'), type: 'image', caption: 'Memory 08', date: '2026-02-11' },
+  { id: 'seed-09', url: withBase('media/gallery/IMG_7593.JPEG'), type: 'image', caption: 'Memory 09', date: '2026-02-11' },
+  { id: 'seed-10', url: withBase('media/gallery/IMG_7578.JPEG'), type: 'image', caption: 'Memory 10', date: '2026-02-11' },
+  { id: 'seed-11', url: withBase('media/gallery/IMG_7567.JPEG'), type: 'image', caption: 'Memory 11', date: '2026-02-11' },
+  { id: 'seed-12', url: withBase('media/gallery/IMG_7309.JPEG'), type: 'image', caption: 'Memory 12', date: '2026-02-11' },
+  { id: 'seed-13', url: withBase('media/gallery/IMG_7291.JPEG'), type: 'image', caption: 'Memory 13', date: '2026-02-11' },
+  { id: 'seed-14', url: withBase('media/gallery/IMG_7300.JPEG'), type: 'image', caption: 'Memory 14', date: '2026-02-11' },
+  { id: 'seed-15', url: withBase('media/gallery/IMG_7305.JPEG'), type: 'image', caption: 'Memory 15', date: '2026-02-11' },
+  { id: 'seed-16', url: withBase('media/gallery/IMG_7306.JPEG'), type: 'image', caption: 'Memory 16', date: '2026-02-11' },
+  { id: 'seed-17', url: withBase('media/gallery/c27f393c-be20-41f0-b103-94c7ed1bf6c5.JPEG'), type: 'image', caption: 'Memory 17', date: '2026-02-11' },
+  { id: 'seed-18', url: withBase('media/gallery/f42f85bc-190d-4725-b409-90fdbfb6b935.JPEG'), type: 'image', caption: 'Memory 18', date: '2026-02-11' },
+  { id: 'seed-19', url: withBase('media/gallery/43625a00-682a-405c-b069-6ac90eebf417.JPEG'), type: 'image', caption: 'Memory 19', date: '2026-02-11' },
+  { id: 'seed-20', url: withBase('media/gallery/cb99cba5-2c38-441a-9c86-1fd167bb2f3c.JPEG'), type: 'image', caption: 'Memory 20', date: '2026-02-11' },
+  { id: 'seed-21', url: withBase('media/gallery/IMG_7241.JPEG'), type: 'image', caption: 'Memory 21', date: '2026-02-11' },
+  { id: 'seed-22', url: withBase('media/gallery/IMG_7163.JPEG'), type: 'image', caption: 'Memory 22', date: '2026-02-11' },
+  { id: 'seed-23', url: withBase('media/gallery/IMG_7125.JPEG'), type: 'image', caption: 'Memory 23', date: '2026-02-11' },
+  { id: 'seed-24', url: withBase('media/gallery/IMG_6974.JPEG'), type: 'image', caption: 'Memory 24', date: '2026-02-11' },
+  { id: 'seed-25', url: withBase('media/gallery/IMG_6764.JPEG'), type: 'image', caption: 'Memory 25', date: '2026-02-11' },
+  { id: 'seed-26', url: withBase('media/gallery/IMG_6753.JPEG'), type: 'image', caption: 'Memory 26', date: '2026-02-11' },
+  { id: 'seed-27', url: withBase('media/gallery/IMG_6733.MOV'), type: 'video', caption: 'Memory 27', date: '2026-02-11' },
+  { id: 'seed-28', url: withBase('media/gallery/IMG_6711.JPEG'), type: 'image', caption: 'Memory 28', date: '2026-02-11' },
+  { id: 'seed-29', url: withBase('media/gallery/IMG_6678.JPEG'), type: 'image', caption: 'Memory 29', date: '2026-02-11' },
+];
+
 const MediaRenderer: React.FC<{ photo: Photo, className?: string, autoPlay?: boolean, muted?: boolean, loop?: boolean, onEnded?: () => void, controls?: boolean }> = ({ photo, className, autoPlay, muted, loop, onEnded, controls }) => {
   if (photo.type === 'video') return <video src={photo.url} className={`${className} object-contain`} autoPlay={autoPlay} muted={muted} loop={loop} onEnded={onEnded} controls={controls} playsInline />;
   return <img src={photo.url} className={className} alt={photo.caption} />;
@@ -25,17 +59,12 @@ const PhotoMemories: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        let data = await getAllMemories();
-        if (data.length === 0) {
-          const defaults: Photo[] = [
-            { id: 'vc-1', url: 'https://images.unsplash.com/photo-1588196749597-9ff075ee6b5b?q=80&w=1200&auto=format', type: 'image', caption: 'Late night calls 🌙', date: '2024-02-14' },
-            { id: '1', url: 'https://images.unsplash.com/photo-1516589174184-c6858b16ecb0?q=80&w=1200&auto=format', type: 'image', caption: 'Our first sunset together.', date: '2023-03-12' },
-            { id: '2', url: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=1200&auto=format', type: 'image', caption: 'The smile that changed my world.', date: '2023-04-05' },
-          ];
-          for (const d of defaults) await saveMemory(d);
-          data = await getAllMemories();
-        }
-        setPhotos(data);
+                const data = await getAllMemories();
+        const existingIds = new Set(data.map((memory) => memory.id));
+        const missingDefaults = DEFAULT_MEMORIES.filter((memory) => !existingIds.has(memory.id));
+        for (const memory of missingDefaults) await saveMemory(memory);
+        const updatedData = await getAllMemories();
+        setPhotos(updatedData);
       } catch (err) { console.error("Failed to load memories:", err); } finally { setIsLoading(false); }
     };
     loadData();
@@ -193,3 +222,4 @@ const PhotoMemories: React.FC = () => {
 };
 
 export default PhotoMemories;
+
