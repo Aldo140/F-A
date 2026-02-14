@@ -14,6 +14,7 @@ const ValentineSplash: React.FC<Props> = ({ onDismiss }) => {
   const [noButtonPos, setNoButtonPos] = useState({ x: 0, y: 0 });
   const [noCount, setNoCount] = useState(0);
   const [showBruh, setShowBruh] = useState(false);
+  const [showMeme, setShowMeme] = useState(false);
   
   const isAnniversary = isAnniversaryDate();
   const content = isAnniversary ? APP_CONTENT.anniversary : APP_CONTENT.valentine;
@@ -25,6 +26,12 @@ const ValentineSplash: React.FC<Props> = ({ onDismiss }) => {
 
   const sparkles = useMemo(() => Array.from({ length: 20 }), []);
   const floatingIcons = useMemo(() => Array.from({ length: 12 }), []);
+  const [showIntro, setShowIntro] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setShowIntro(false), 2000);
+    return () => clearTimeout(t);
+  }, []);
 
   const handleNoClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -38,7 +45,13 @@ const ValentineSplash: React.FC<Props> = ({ onDismiss }) => {
     setNoCount(nextCount);
 
     const roasts = APP_CONTENT.valentine.roasts;
-    setFunnyMessage(roasts[Math.min(nextCount - 1, roasts.length - 1)]);
+    const chosen = roasts[Math.min(nextCount - 1, roasts.length - 1)];
+    setFunnyMessage(chosen);
+
+    // Show meme overlay when the specific roast occurs
+    if (chosen === 'do it again i dare you') {
+      setShowMeme(true);
+    }
 
     if (nextCount % 3 === 0) {
       setShowBruh(true);
@@ -77,7 +90,7 @@ const ValentineSplash: React.FC<Props> = ({ onDismiss }) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className={`fixed inset-0 z-[99999] ${themeColors.bg} flex flex-col items-center justify-center p-6 text-center overflow-hidden`}
+      className={`fixed inset-0 z-99999 ${themeColors.bg} flex flex-col items-center justify-center p-6 text-center overflow-hidden`}
     >
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className={`absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_0%,_${themeColors.glow}_100%)]`} />
@@ -107,7 +120,7 @@ const ValentineSplash: React.FC<Props> = ({ onDismiss }) => {
 
       <AnimatePresence>
         {showBruh && (
-          <motion.div initial={{ opacity: 0, scale: 0.5, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 1.5, y: -20 }} className="fixed inset-0 z-[100000] flex items-center justify-center pointer-events-none">
+          <motion.div initial={{ opacity: 0, scale: 0.5, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 1.5, y: -20 }} className="fixed inset-0 z-100000 flex items-center justify-center pointer-events-none">
             <div className="bg-stone-900/90 backdrop-blur-md text-white px-8 py-4 rounded-full font-black text-2xl lg:text-4xl uppercase tracking-tighter italic shadow-2xl">
               {APP_CONTENT.valentine.bruhText}
             </div>
@@ -118,41 +131,49 @@ const ValentineSplash: React.FC<Props> = ({ onDismiss }) => {
       <div className="relative z-10 w-full max-w-4xl mx-auto flex flex-col items-center justify-center h-full">
         <AnimatePresence mode="wait">
           {!hasAccepted ? (
-            <motion.div key="proposal" initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -30, opacity: 0 }} className="flex flex-col items-center gap-6 lg:gap-10">
-              <motion.div animate={{ scale: [1, 1.05, 1], rotate: [0, 5, -5, 0] }} transition={{ repeat: Infinity, duration: 4 }} className="relative">
-                <div className="p-6 bg-white rounded-full shadow-xl border border-stone-50">
-                  {isAnniversary ? (
-                    <PartyPopper size={48} className="lg:w-20 lg:h-20 text-amber-500" />
-                  ) : (
-                    <Heart size={48} className={`lg:w-20 lg:h-20 ${noCount > 2 ? 'text-stone-300' : 'text-rose-500 fill-rose-100'} transition-colors duration-500`} />
-                  )}
-                </div>
-                <div className="absolute -top-2 -right-2"><Sparkles className="text-amber-400 animate-pulse" size={24} /></div>
-              </motion.div>
-              <div className="space-y-4 px-4">
-                <h1 className={`text-4xl lg:text-7xl font-bold ${isAnniversary ? 'text-amber-900' : 'text-rose-950'} serif italic leading-tight`}>{isAnniversary ? APP_CONTENT.anniversary.title : APP_CONTENT.valentine.proposal}</h1>
-                <motion.p key={funnyMessage} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`${themeColors.primary} font-bold tracking-widest uppercase text-[10px] lg:text-sm min-h-[20px]`}>{funnyMessage}</motion.p>
-              </div>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 lg:gap-6 pt-6 w-full px-10">
-                <motion.button 
-                  whileHover={{ scale: 1.05 }} 
-                  whileTap={{ scale: 0.95 }} 
-                  onClick={() => setHasAccepted(true)} 
-                  className={`w-full sm:w-auto px-12 py-4 lg:px-16 lg:py-6 ${themeColors.button} text-white rounded-full font-black uppercase tracking-widest text-sm lg:text-base shadow-xl transition-all border-2 border-white/10`}
-                >
-                  {isAnniversary ? APP_CONTENT.anniversary.yesButton : APP_CONTENT.valentine.yesButton}
-                </motion.button>
-                <motion.button 
-                  ref={noButtonRef} 
-                  animate={{ x: noButtonPos.x, y: noButtonPos.y, scale: isAnniversary ? 1 : Math.max(0.4, 1 - noCount * 0.15) }} 
-                  onClick={handleNoClick} 
-                  className={`w-full sm:w-auto px-8 py-4 lg:px-10 lg:py-5 bg-white/50 backdrop-blur-sm border ${isAnniversary ? 'border-amber-100 text-amber-400' : 'border-rose-100 text-rose-400'} rounded-full font-black uppercase tracking-widest text-xs lg:text-sm shadow-sm hover:bg-white transition-colors`}
-                >
-                  {isAnniversary ? APP_CONTENT.anniversary.noButton : APP_CONTENT.valentine.noButton} {noCount > 0 && `(${noCount})`}
-                </motion.button>
-              </div>
-            </motion.div>
-          ) : (
+              showIntro ? (
+                <motion.div key="intro" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-6 lg:gap-10">
+                  <div className="space-y-4 px-4">
+                    <h1 className={`text-6xl lg:text-9xl font-black ${isAnniversary ? 'text-amber-900' : 'text-rose-950'} serif italic leading-tight`}>Dear Fioni.</h1>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div key="proposal" initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -30, opacity: 0 }} className="flex flex-col items-center gap-6 lg:gap-10">
+                  <motion.div animate={{ scale: [1, 1.05, 1], rotate: [0, 5, -5, 0] }} transition={{ repeat: Infinity, duration: 4 }} className="relative">
+                    <div className="p-6 bg-white rounded-full shadow-xl border border-stone-50">
+                      {isAnniversary ? (
+                        <PartyPopper size={48} className="lg:w-20 lg:h-20 text-amber-500" />
+                      ) : (
+                        <Heart size={48} className={`lg:w-20 lg:h-20 ${noCount > 2 ? 'text-stone-300' : 'text-rose-500 fill-rose-100'} transition-colors duration-500`} />
+                      )}
+                    </div>
+                    <div className="absolute -top-2 -right-2"><Sparkles className="text-amber-400 animate-pulse" size={24} /></div>
+                  </motion.div>
+                  <div className="space-y-4 px-4">
+                    <h1 className={`text-4xl lg:text-7xl font-bold ${isAnniversary ? 'text-amber-900' : 'text-rose-950'} serif italic leading-tight`}>{isAnniversary ? APP_CONTENT.anniversary.title : APP_CONTENT.valentine.proposal}</h1>
+                    <motion.p key={funnyMessage} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`${themeColors.primary} font-bold tracking-widest uppercase text-[10px] lg:text-sm min-h-5`}>{funnyMessage}</motion.p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4 lg:gap-6 pt-6 w-full px-10">
+                    <motion.button 
+                      whileHover={{ scale: 1.05 }} 
+                      whileTap={{ scale: 0.95 }} 
+                      onClick={() => setHasAccepted(true)} 
+                      className={`w-full sm:w-auto px-12 py-4 lg:px-16 lg:py-6 ${themeColors.button} text-white rounded-full font-black uppercase tracking-widest text-sm lg:text-base shadow-xl transition-all border-2 border-white/10`}
+                    >
+                      {isAnniversary ? APP_CONTENT.anniversary.yesButton : APP_CONTENT.valentine.yesButton}
+                    </motion.button>
+                    <motion.button 
+                      ref={noButtonRef} 
+                      animate={{ x: noButtonPos.x, y: noButtonPos.y, scale: isAnniversary ? 1 : Math.max(0.4, 1 - noCount * 0.15) }} 
+                      onClick={handleNoClick} 
+                      className={`w-full sm:w-auto px-8 py-4 lg:px-10 lg:py-5 bg-white/50 backdrop-blur-sm border ${isAnniversary ? 'border-amber-100 text-amber-400' : 'border-rose-100 text-rose-400'} rounded-full font-black uppercase tracking-widest text-xs lg:text-sm shadow-sm hover:bg-white transition-colors`}
+                    >
+                      {isAnniversary ? APP_CONTENT.anniversary.noButton : APP_CONTENT.valentine.noButton} {noCount > 0 && `(${noCount})`}
+                    </motion.button>
+                  </div>
+                </motion.div>
+              )
+            ) : (
             <motion.div key="celebration" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-8 lg:gap-12 px-6">
               <div className="relative">
                 <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1.5 }}>
@@ -192,6 +213,23 @@ const ValentineSplash: React.FC<Props> = ({ onDismiss }) => {
       <div className="absolute bottom-10 left-0 right-0 text-center opacity-40 pointer-events-none pb-[var(--safe-bottom,0px)]">
          <p className={`${isAnniversary ? 'text-amber-900' : 'text-rose-900'} font-black text-[8px] lg:text-xs uppercase tracking-[0.8em] italic`}>{isAnniversary ? APP_CONTENT.anniversary.footer : APP_CONTENT.valentine.footer}</p>
       </div>
+
+      <AnimatePresence>
+        {showMeme && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-100001 flex items-center justify-center">
+            <div onClick={() => setShowMeme(false)} className="absolute inset-0 bg-black/70" />
+            <div className="relative z-10 max-w-xs w-[90%] bg-white rounded-2xl shadow-2xl p-4 lg:p-6 flex flex-col items-center">
+              <button onClick={() => setShowMeme(false)} className="absolute right-3 top-3 p-2 rounded-full bg-stone-100/70 hover:bg-stone-100">
+                <X size={16} />
+              </button>
+                <div className="w-full flex items-center justify-center">
+                <img src="/media/meme/cat-rose.gif" alt="dare meme" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/media/meme/dare.svg'; }} className="max-h-64 w-auto rounded-lg" />
+              </div>
+              <div className="mt-4 text-xs text-stone-500 uppercase font-black tracking-wide">Do it again, I dare you</div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

@@ -153,7 +153,7 @@ const AppContent: React.FC = () => {
   .sort((a, b) => a.daysUntil - b.daysUntil);
 
   return (
-    <div className={`min-h-[100dvh] flex flex-col items-center selection:bg-rose-100 relative transition-colors duration-700 ${isHideUIPresent ? 'bg-black' : 'bg-[#fcfbf4]'}`}>
+    <div className={`min-h-dvh flex flex-col items-center selection:bg-rose-100 relative transition-colors duration-700 ${isHideUIPresent ? 'bg-black' : 'bg-[#fcfbf4]'}`}>
       <ValentineEffect />
       
       {!isAuthenticated && <ProductionTestTools />}
@@ -181,11 +181,11 @@ const AppContent: React.FC = () => {
             className="w-full flex flex-col items-center"
           >
             {!isHideUIPresent && (
-              <motion.header 
+                <motion.header 
                 initial={{ y: 0 }}
                 animate={{ y: showHeader ? 0 : -120 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                className="fixed top-0 left-0 right-0 z-[100] flex justify-between items-center px-4 lg:px-12 py-4 lg:py-6 pointer-events-none pt-[calc(1rem+var(--safe-top,0px))]"
+                className="fixed top-0 left-0 right-0 z-100 flex justify-between items-center px-4 lg:px-12 py-4 lg:py-6 pointer-events-none pt-[calc(1rem+var(--safe-top,0px))]"
               >
                 <div className="flex items-center gap-2 pointer-events-auto">
                   <Heart size={16} className="text-rose-400 fill-rose-100 heartbeat" />
@@ -208,7 +208,7 @@ const AppContent: React.FC = () => {
               </motion.header>
             )}
 
-            <main className="w-full max-w-6xl px-4 lg:px-6 pt-24 pb-48 lg:pt-32 lg:pb-64 flex-grow">
+            <main className="w-full max-w-6xl px-4 lg:px-6 pt-24 pb-48 lg:pt-32 lg:pb-64 grow">
               <AnimatePresence mode="wait">
                 {activeTab === 'home' && (
                   <motion.div key="home" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} className="space-y-12 lg:space-y-24">
@@ -220,14 +220,13 @@ const AppContent: React.FC = () => {
                       </div>
                       <Countdown />
                     </section>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10 items-stretch">
-                      <HomeCard title={APP_CONTENT.home.thoughtTitle} content={APP_CONTENT.home.thoughtContent} icon={<Heart size={18} className="text-rose-400" />} footer={APP_CONTENT.home.thoughtFooter} />
-                      <div className="relative group bg-rose-50/40 backdrop-blur-md border border-rose-100 p-6 lg:p-10 rounded-[2.5rem] lg:rounded-[3.5rem] shadow-sm flex flex-col space-y-6 overflow-hidden min-h-[320px]">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-stretch">
+                      <div className="relative group bg-rose-50/40 backdrop-blur-md border border-rose-100 p-6 lg:p-10 rounded-[2.5rem] lg:rounded-[3.5rem] shadow-sm flex flex-col space-y-6 overflow-hidden min-h-80">
                         <div className="flex items-center gap-3">
                           <Bell size={18} className="text-rose-500 heartbeat" />
                           <span className="text-[10px] lg:text-xs uppercase tracking-[0.25em] font-black text-rose-400">{APP_CONTENT.home.milestoneTitle}</span>
                         </div>
-                        <div className="flex-grow overflow-y-auto pr-2 space-y-8 custom-scrollbar">
+                        <div className="grow overflow-y-auto pr-2 space-y-8 custom-scrollbar">
                           {upcoming.length > 0 ? (upcoming.map((milestone) => (
                               <div key={milestone.name} className="relative">
                                 <p className="text-xl lg:text-2xl text-stone-800 font-bold serif leading-tight">{milestone.title}</p>
@@ -239,7 +238,7 @@ const AppContent: React.FC = () => {
                           ))) : (<p className="text-stone-400 italic text-center py-10">{APP_CONTENT.home.milestoneEmpty}</p>)}
                         </div>
                       </div>
-                      <div onClick={() => setActiveTab('media')} className="relative group bg-[#111111] text-stone-100 p-6 lg:p-10 rounded-[2.5rem] lg:rounded-[3.5rem] shadow-2xl flex flex-col justify-between cursor-pointer active:scale-95 transition-all min-h-[320px]">
+                      <div onClick={() => setActiveTab('media')} className="relative group bg-[#111111] text-stone-100 p-6 lg:p-10 rounded-[2.5rem] lg:rounded-[3.5rem] shadow-2xl flex flex-col justify-between cursor-pointer active:scale-95 transition-all min-h-80">
                         <div className="flex items-center gap-3">
                           <Tv size={18} className="text-rose-400" />
                           <span className="text-[10px] uppercase tracking-[0.25em] font-black text-stone-500">{APP_CONTENT.home.watchTitle}</span>
@@ -262,7 +261,7 @@ const AppContent: React.FC = () => {
             </main>
 
             {!isHideUIPresent && (
-              <nav className="fixed bottom-4 lg:bottom-12 left-1/2 -translate-x-1/2 w-[95%] max-w-xl lg:max-w-2xl bg-white/70 backdrop-blur-3xl border border-white/80 shadow-2xl rounded-[2.5rem] lg:rounded-[3.5rem] px-4 lg:px-14 py-3 lg:py-5 z-[100] flex items-center justify-between">
+              <nav className="fixed bottom-4 lg:bottom-12 left-1/2 -translate-x-1/2 w-[95%] max-w-xl lg:max-w-2xl bg-white/70 backdrop-blur-3xl border border-white/80 shadow-2xl rounded-[2.5rem] lg:rounded-[3.5rem] px-4 lg:px-14 py-3 lg:py-5 z-100 flex items-center justify-between">
                 <NavButton active={activeTab === 'home'} onClick={() => setActiveTab('home')} icon={<Heart size={20} />} label={APP_CONTENT.navigation.us} />
                 <NavButton active={activeTab === 'photos'} onClick={() => setActiveTab('photos')} icon={<Camera size={20} />} label={APP_CONTENT.navigation.moments} />
                 <NavButton active={activeTab === 'correspondence'} onClick={() => setActiveTab('correspondence')} icon={<Mail size={20} />} label={APP_CONTENT.navigation.letters} />
@@ -278,9 +277,9 @@ const AppContent: React.FC = () => {
 };
 
 const HomeCard: React.FC<{ title: string, content: string, icon: React.ReactNode, footer: string }> = ({ title, content, icon, footer }) => (
-  <div className="bg-white/50 backdrop-blur-md border border-white/80 p-6 lg:p-10 rounded-[2.5rem] lg:rounded-[3.5rem] shadow-sm flex flex-col space-y-6 min-h-[320px]">
+  <div className="bg-white/50 backdrop-blur-md border border-white/80 p-6 lg:p-10 rounded-[2.5rem] lg:rounded-[3.5rem] shadow-sm flex flex-col space-y-6 min-h-80">
     <div className="flex items-center gap-3"><div className="p-2 bg-stone-50 rounded-xl">{icon}</div><span className="text-[10px] lg:text-xs uppercase tracking-[0.25em] font-black text-stone-400">{title}</span></div>
-    <p className="text-xl lg:text-3xl text-stone-800 font-medium serif italic leading-relaxed flex-grow">"{content}"</p>
+    <p className="text-xl lg:text-3xl text-stone-800 font-medium serif italic leading-relaxed grow">"{content}"</p>
     <div className="pt-6 border-t border-stone-100/50 flex justify-between items-center"><span className="text-stone-300 text-[10px] font-black uppercase tracking-[0.2em]">{footer}</span></div>
   </div>
 );
